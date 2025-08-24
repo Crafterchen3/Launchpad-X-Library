@@ -115,9 +115,26 @@ public class Launchpad {
         }
     }
 
+    public void setButtonLight(Rectangle2D rectangle, PalleteColor color, LightEffect effect) throws MidiUnavailableException, InvalidMidiDataException {
+        for (int x = 0; x < rectangle.getWidth(); x++) {
+            for (int y = 0; y < rectangle.getHeight(); y++) {
+                setButtonLight(new Point((int) (x + rectangle.getX()), (int) (y + rectangle.getY())), color, effect);
+            }
+        }
+    }
+
+
     public void setButtonRGB(Point pos, Color color) throws MidiUnavailableException, InvalidMidiDataException {
         MidiHelper.sendMessage(outputDevice, 0xF0, 0x00, 0x20, 0x29, 0x02, 0x0C, 0x03, 0x03, parsePoint(pos), (color.getRed() / 2), (color.getGreen() / 2), (color.getBlue() / 2), 0xF7);
         //MidiHelper.sendMessage(outputDevice,new byte[]{(byte) 0xF0,0x00 ,0x20 ,0x29 ,0x02 ,0x0D ,0x03,0x03, (byte) parsePoint(pos), (byte) (color.getRed()/2), (byte) (color.getGreen()/2), (byte) (color.getBlue()/2), (byte) 0xF7});
+    }
+
+    public void setButtonRGB(Rectangle2D rectangle, Color color) throws MidiUnavailableException, InvalidMidiDataException {
+        for (int x = 0; x < rectangle.getWidth(); x++) {
+            for (int y = 0; y < rectangle.getHeight(); y++) {
+                setButtonRGB(new Point((int) (x + rectangle.getX()), (int) (y + rectangle.getY())), color);
+            }
+        }
     }
 
     private int parsePoint(Point pos) {
