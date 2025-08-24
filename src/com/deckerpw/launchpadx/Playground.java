@@ -2,14 +2,26 @@ package com.deckerpw.launchpadx;
 
 import com.deckerpw.launchpadx.api.*;
 
-import javax.sound.midi.*;
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiUnavailableException;
 import java.awt.*;
 import java.io.IOException;
-import java.util.Arrays;
 
 public class Playground {
 
     private static boolean mode;
+    private static PalleteColor[] colors = new PalleteColor[]{
+            new PalleteColor(5),
+            new PalleteColor(13),
+            new PalleteColor(21),
+            new PalleteColor(29),
+            new PalleteColor(37),
+            new PalleteColor(45),
+            new PalleteColor(54),
+            new PalleteColor(3)
+    };
+    private static LightEffect effect = LightEffect.STATIC;
+    private static int color = 3;
 
     public static void main(String[] args) throws MidiUnavailableException, InvalidMidiDataException, IOException {
         String iName = "MIDIIN2 (LPX MIDI)";
@@ -19,7 +31,10 @@ public class Playground {
         launchpad.setButtonLight(new Point(8, 7), PalleteColor.BLUE, LightEffect.STATIC);
         launchpad.setButtonLight(new Point(8, 6), PalleteColor.RED, LightEffect.STATIC);
         launchpad.setButtonLight(new Point(8, 5), PalleteColor.RED, LightEffect.STATIC);
+        launchpad.setButtonLight(new Point(8, 4), PalleteColor.PURPLE, LightEffect.STATIC);
+        launchpad.setButtonLight(new Point(8, 3), PalleteColor.RED, LightEffect.STATIC);
         launchpad.setButtonRGB(new Point(8, 8), Color.CYAN);
+        refreshColorRow(launchpad);
 
         mode = true;
 
@@ -27,7 +42,7 @@ public class Playground {
             @Override
             public void onPressed(PadButtonEvent event) {
                 try {
-                    event.launchpad.setButtonLight(event.buttonPos, new PalleteColor(69), LightEffect.STATIC);
+                    event.launchpad.setButtonLight(event.buttonPos, mode ? colors[color] : PalleteColor.BLACK, effect);
                 } catch (MidiUnavailableException | InvalidMidiDataException e) {
                     throw new RuntimeException(e);
                 }
@@ -35,11 +50,7 @@ public class Playground {
 
             @Override
             public void onReleased(PadButtonEvent event) {
-                try {
-                    event.launchpad.setButtonLight(event.buttonPos, mode ? PalleteColor.PURPLE : PalleteColor.BLACK, LightEffect.PULSING);
-                } catch (MidiUnavailableException | InvalidMidiDataException e) {
-                    throw new RuntimeException(e);
-                }
+
             }
         });
 
@@ -83,7 +94,57 @@ public class Playground {
             @Override
             public void onPressed(PadButtonEvent event) {
                 try {
+                    event.launchpad.setButtonLight(new Rectangle(0, 0, 8, 8), mode ? colors[color] : PalleteColor.BLACK, effect);
+                } catch (MidiUnavailableException | InvalidMidiDataException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void onReleased(PadButtonEvent event) {
+
+            }
+        });
+        launchpad.addButtonListener(new Point(8, 4), new PadButtonListener() {
+            @Override
+            public void onPressed(PadButtonEvent event) {
+                int i = effect.ordinal() + 1;
+                if (i == 3)
+                    i = 0;
+                effect = LightEffect.values()[i];
+                try {
+                    launchpad.setButtonLight(new Point(8, 4), PalleteColor.PURPLE, effect);
+                } catch (MidiUnavailableException | InvalidMidiDataException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void onReleased(PadButtonEvent event) {
+
+            }
+        });
+        launchpad.addButtonListener(new Point(8, 0), new PadButtonListener() {
+            @Override
+            public void onPressed(PadButtonEvent event) {
+                try {
                     event.launchpad.sendText("Hello World!");
+                } catch (MidiUnavailableException | InvalidMidiDataException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void onReleased(PadButtonEvent event) {
+
+            }
+        });
+        launchpad.addButtonListener(new Rectangle(0, 8, 8, 1), new PadButtonListener() {
+            @Override
+            public void onPressed(PadButtonEvent event) {
+                color = event.buttonPos.x;
+                try {
+                    refreshColorRow(event.launchpad);
                 } catch (MidiUnavailableException | InvalidMidiDataException e) {
                     throw new RuntimeException(e);
                 }
@@ -128,6 +189,13 @@ public class Playground {
 //        //MidiHelper.sendScrollText(oDev,false, (byte) 0x39,Color.RED,"The Launchpad X can display scrolling text across the pads and the right-side buttons. The top row buttons and the logo is not affected by the scroll, and any lighting covered by the scroll is retained (will return once the scroll is stopped or completed).");
 //
 //        System.out.println("finish");
+    }
+
+    private static void refreshColorRow(Launchpad launchpad) throws MidiUnavailableException, InvalidMidiDataException {
+        for (int i = 0; i < 8; i++) {
+            launchpad.setButtonLight(new Point(i, 8), colors[i], LightEffect.STATIC);
+        }
+        launchpad.setButtonLight(new Point(color, 8), colors[color], LightEffect.PULSING);
     }
 
 }
