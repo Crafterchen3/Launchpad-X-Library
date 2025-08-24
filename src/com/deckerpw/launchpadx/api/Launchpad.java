@@ -39,8 +39,9 @@ public class Launchpad {
     }
 
     private void enterProgrammerMode(boolean mode) throws MidiUnavailableException, InvalidMidiDataException {
-        MidiHelper.sendMessage(outputDevice, new byte[]{(byte) 0xF0, 0x00, 0x20, 0x29, 0x02, 0x0C, 0x0E, (byte) (mode ? 1 : 0), (byte) 0xF7});
-        MidiHelper.sendMessage(outputDevice, new byte[]{(byte) 0xF0, 0x00, 0x20, 0x29, 0x02, 0x0D, 0x0E, (byte) (mode ? 1 : 0), (byte) 0xF7});
+        MidiHelper.sendMessage(outputDevice, 0xF0, 0x00, 0x20, 0x29, 0x02,  0x0C,  0x0E,  (mode ? 1 : 0),  0xF7);
+        MidiHelper.sendMessage(outputDevice, 0xF0, 0x00, 0x20, 0x29, 0x02,  0x0D,  0x0E,  (mode ? 1 : 0),  0xF7);
+
     }
 
 
@@ -108,19 +109,23 @@ public class Launchpad {
 
     public void setButtonLight(Point pos, PalleteColor color, LightEffect effect) throws MidiUnavailableException, InvalidMidiDataException {
         switch (effect) {
-            case STATIC -> MidiHelper.sendMessage(outputDevice, 0x90, parsePoint(pos), color.color);
-            case FLASHING -> MidiHelper.sendMessage(outputDevice, 0x91, parsePoint(pos), color.color);
-            case PULSING -> MidiHelper.sendMessage(outputDevice, 0x92, parsePoint(pos), color.color);
+            case STATIC -> MidiHelper.sendShortMessage(outputDevice, 0x90, parsePoint(pos), color.color);
+            case FLASHING -> MidiHelper.sendShortMessage(outputDevice, 0x91, parsePoint(pos), color.color);
+            case PULSING -> MidiHelper.sendShortMessage(outputDevice, 0x92, parsePoint(pos), color.color);
         }
     }
 
     public void setButtonRGB(Point pos, Color color) throws MidiUnavailableException, InvalidMidiDataException {
-        MidiHelper.sendMessage(outputDevice, new byte[]{(byte) 0xF0, 0x00, 0x20, 0x29, 0x02, 0x0C, 0x03, 0x03, (byte) parsePoint(pos), (byte) (color.getRed() / 2), (byte) (color.getGreen() / 2), (byte) (color.getBlue() / 2), (byte) 0xF7});
+        MidiHelper.sendMessage(outputDevice, 0xF0, 0x00, 0x20, 0x29, 0x02, 0x0C, 0x03, 0x03, parsePoint(pos), (color.getRed() / 2), (color.getGreen() / 2), (color.getBlue() / 2), 0xF7);
         //MidiHelper.sendMessage(outputDevice,new byte[]{(byte) 0xF0,0x00 ,0x20 ,0x29 ,0x02 ,0x0D ,0x03,0x03, (byte) parsePoint(pos), (byte) (color.getRed()/2), (byte) (color.getGreen()/2), (byte) (color.getBlue()/2), (byte) 0xF7});
     }
 
     private int parsePoint(Point pos) {
         return pos.x + 1 + (pos.y + 1) * 10;
+    }
+
+    public void sendText(String text) throws MidiUnavailableException, InvalidMidiDataException {
+        MidiHelper.sendScrollText(outputDevice,false, (byte) 0x05,Color.GREEN,text);
     }
 
 }

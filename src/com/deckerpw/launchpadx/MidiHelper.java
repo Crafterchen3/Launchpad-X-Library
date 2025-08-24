@@ -14,23 +14,26 @@ public class MidiHelper {
         return rv;
     }
 
+    public static void sendMessage(MidiDevice device, int... message) throws MidiUnavailableException, InvalidMidiDataException {
+        sendMessage(device, toByteArray(message));
+    }
 
-    public static void sendMessage(MidiDevice device, byte[] message) throws MidiUnavailableException, InvalidMidiDataException {
+    public static void sendMessage(MidiDevice device, byte... message) throws MidiUnavailableException, InvalidMidiDataException {
         Receiver receiver = device.getReceiver();
         SysexMessage sysMsg = new SysexMessage();
         sysMsg.setMessage(message, message.length);
         receiver.send(sysMsg, -1);
     }
 
-    public static void sendMessage(MidiDevice device, ShortMessage message) throws MidiUnavailableException, InvalidMidiDataException {
-        Receiver receiver = device.getReceiver();
-        receiver.send(message, -1);
+    public static void sendShortMessage(MidiDevice device, int data1, int data2, int data3) throws InvalidMidiDataException, MidiUnavailableException {
+        ShortMessage message = new ShortMessage();
+        message.setMessage(data1,data2,data3);
+        sendShortMessage(device,message);
     }
 
-    public static void sendMessage(MidiDevice device, int data1, int data2, int data3) throws MidiUnavailableException, InvalidMidiDataException {
-        ShortMessage message = new ShortMessage();
-        message.setMessage(data1, data2, data3);
-        sendMessage(device, message);
+    public static void sendShortMessage(MidiDevice device, ShortMessage message) throws MidiUnavailableException {
+        Receiver receiver = device.getReceiver();
+        receiver.send(message, -1);
     }
 
     public static void sendScrollText(MidiDevice device, boolean loop, byte speed, Color color, String text) throws MidiUnavailableException, InvalidMidiDataException {
@@ -40,6 +43,14 @@ public class MidiHelper {
         System.arraycopy(textBytes, 0, msg, 13, textBytes.length);
         msg[msg.length - 1] = (byte) 0xF7;
         sendMessage(device, msg);
+    }
+
+    private static byte[] toByteArray(int[] ints) {
+        byte[] bytes = new byte[ints.length];
+        for (int i = 0; i < ints.length; i++) {
+            bytes[i] = (byte) ints[i];
+        }
+        return bytes;
     }
 
 }
