@@ -36,14 +36,7 @@ public class MidiHelper {
         receiver.send(message, -1);
     }
 
-    public static void sendScrollText(MidiDevice device, boolean loop, byte speed, Color color, String text) throws MidiUnavailableException, InvalidMidiDataException {
-        byte[] msg = new byte[15 + text.length()];
-        System.arraycopy(new byte[]{(byte) 0xF0, 0x00, 0x20, 0x29, 0x02, 0x0C, 0x07, (byte) (loop ? 1 : 0), speed, 0x01, (byte) (color.getRed() / 2 - 1), (byte) (color.getGreen() / 2 - 1), (byte) (color.getBlue() / 2 - 1)}, 0, msg, 0, 11);
-        byte[] textBytes = text.getBytes(StandardCharsets.UTF_8);
-        System.arraycopy(textBytes, 0, msg, 13, textBytes.length);
-        msg[msg.length - 1] = (byte) 0xF7;
-        sendMessage(device, msg);
-    }
+
 
     private static byte[] toByteArray(int[] ints) {
         byte[] bytes = new byte[ints.length];

@@ -5,6 +5,7 @@ import com.deckerpw.launchpadx.MidiHelper;
 import javax.sound.midi.*;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,18 +13,22 @@ import java.util.Map;
 public class Launchpad {
 
     public final Map<Point, PadButtonListener> listenerMap = new HashMap<>();
+    private final String midiOut;
+    private final String midiIn;
     private MidiDevice inputDevice;
     private MidiDevice outputDevice;
 
     public Launchpad(String midiIn, String midiOut) throws MidiUnavailableException, InvalidMidiDataException {
         MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
+        this.midiIn = midiIn;
+        this.midiOut = midiOut;
         for (MidiDevice.Info info : infos) {
             System.out.println(info.getName());
-            if (info.getName().equals(midiOut) && inputDevice == null) {
+            if (info.getName().equals(this.midiOut) && inputDevice == null) {
                 inputDevice = MidiSystem.getMidiDevice(info);
                 continue;
             }
-            if (info.getName().equals(midiIn) && outputDevice == null) {
+            if (info.getName().equals(this.midiIn) && outputDevice == null) {
                 outputDevice = MidiSystem.getMidiDevice(info);
                 continue;
             }
@@ -34,8 +39,13 @@ public class Launchpad {
         inputDevice.open();
 
         enterProgrammerMode(true);
+        clear();
 
         receive();
+    }
+
+    private void clear() throws MidiUnavailableException, InvalidMidiDataException {
+        setButtonLight(new Rectangle(0,0,9,9),PalleteColor.BLACK,LightEffect.STATIC);
     }
 
     private void enterProgrammerMode(boolean mode) throws MidiUnavailableException, InvalidMidiDataException {
@@ -67,6 +77,17 @@ public class Launchpad {
             public void close() {
             }
         });
+    }
+
+    public void destroy() throws MidiUnavailableException, InvalidMidiDataException {
+        enterProgrammerMode(false);
+        outputDevice.close();
+        inputDevice.close();
+    }
+
+    public Launchpad recreate() throws MidiUnavailableException, InvalidMidiDataException {
+        destroy();
+        return new Launchpad(midiIn,midiOut);
     }
 
     public void addButtonListener(Point buttonPos, PadButtonListener listener) {
@@ -141,8 +162,17 @@ public class Launchpad {
         return pos.x + 1 + (pos.y + 1) * 10;
     }
 
-    public void sendText(String text) throws MidiUnavailableException, InvalidMidiDataException {
-        MidiHelper.sendScrollText(outputDevice,false, (byte) 0x05,Color.GREEN,text);
+    public void sendText(boolean loop, byte speed, Color color, String text) throws MidiUnavailableException, InvalidMidiDataException {
+        byte[] msg = new byte[15 + text.length()];
+        System.arraycopy(new byte[]{(byte) 0xF0, 0x00, 0x20, 0x29, 0x02, 0x0C, 0x07, (byte) (loop ? 1 : 0), speed, 0x01, (byte) (color.getRed() / 2 - 1), (byte) (color.getGreen() / 2 - 1), (byte) (color.getBlue() / 2 - 1)}, 0, msg, 0, 11);
+        byte[] textBytes = text.getBytes(StandardCharsets.UTF_8);
+        System.arraycopy(textBytes, 0, msg, 13, textBytes.length);
+        msg[msg.length - 1] = (byte) 0xF7;
+        MidiHelper.sendMessage(outputDevice, msg);
+    }
+
+    public void stopText() throws MidiUnavailableException, InvalidMidiDataException {
+        MidiHelper.sendMessage(outputDevice, 0xF0,    0x00,  0x20,   0x29,   0x02,  0x0C,   0x07,0xF7);
     }
 
 }
